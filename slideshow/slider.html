@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customized Slideshow</title>
+    <style>
+        /* Add your custom CSS styles here */
+        #video-container {
+            width: 100%;
+            max-width: 800px; /* Adjust as needed */
+            margin: 0 auto;
+        }
+        video {
+            width: 100%;
+            height: auto;
+        }
+        #startButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1 class='text-center text-primary'>
+      Screen  {{screen_id}}
+    </h1>
+    <div id="video-container"></div>
+    <button id="startButton">Start Slideshow</button>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var videos = [
+                {% for media_file in media_files %}
+                {
+                    video_name: "{{ media_file.video_name }}",
+                    video_file: "{{ media_file.video_file.url }}",
+                    duration: {{ media_file.video_duration }}
+                }
+                {% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            var currentVideoIndex = 0;
+
+            function playNextVideo() {
+                var video = videos[currentVideoIndex];
+
+                var videoElement = $('<video autoplay controls><source src="' + video.video_file + '" type="video/mp4"></video>');
+                $('#video-container').empty().append(videoElement);
+
+                videoElement.on('loadedmetadata', function() {
+                    this.currentTime = 0;
+                });
+
+                videoElement.on('ended', function() {
+                    currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+                    playNextVideo();
+                });
+
+                videoElement[0].play().catch(function(error) {
+                    console.error("Error starting video playback:", error);
+                });
+
+                setTimeout(function() {
+                    if (!videoElement[0].ended) {
+                        currentVideoIndex = (currentVideoIndex + 1) % videos.length;
+                        playNextVideo();
+                    }
+                }, video.duration * 1000);
+            }
+
+            // Start the slideshow on button click
+            $('#startButton').click(function() {
+                $('#startButton').hide();
+                playNextVideo();
+            });
+        });
+    </script>
+</body>
+</html>

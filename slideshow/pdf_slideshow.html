@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Slideshow</title>
+    <style>
+        /* Add your custom CSS styles here */
+        #pdf-container {
+            width: 100%;
+            max-width: 800px; /* Adjust as needed */
+            margin: 0 auto;
+        }
+        #startButton {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <h1>
+        Screen {{screen_id}}
+    </h1>
+    <div id="pdf-container"></div>
+    <button id="startButton">Start PDF Slideshow</button>
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script>
+        $(document).ready(function() {
+            var pdfs = [
+                {% for pdf_file in pdf_files %}
+                {
+                    pdf_name: "{{ pdf_file.pdf_name }}",
+                    pdf_file: "{{ pdf_file.pdf_file.url }}",
+                    duration: "{{pdf_file.pdf_duration}}"
+                }
+                {% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ];
+
+            var currentPdfIndex = 0;
+
+            function displayNextPdf() {
+                var pdf = pdfs[currentPdfIndex];
+                console.log("Playing video:", pdf.pdf_name, "with duration:", pdf.duration);
+
+                var embedElement = $('<embed src="' + pdf.pdf_file + '" type="application/pdf" width="100%" height="600px" />');
+                $('#pdf-container').empty().append(embedElement);
+
+                // Log the PDF element to console for debugging
+                console.log("Current PDF Element:", embedElement);
+
+                setTimeout(function() {
+                    currentPdfIndex = (currentPdfIndex + 1) % pdfs.length;
+                    displayNextPdf();
+                }, pdf.duration * 1000);
+            }
+
+            // Start the PDF slideshow on button click
+            $('#startButton').click(function() {
+                $('#startButton').hide();
+                displayNextPdf();
+            });
+        });
+    </script>
+</body>
+</html>
