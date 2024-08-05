@@ -1,0 +1,68 @@
+{% load static %}
+
+{% block content %}
+<div id="media-slider" class="fullscreen">
+  {% for media in media_items %}
+    {% if media.type == 'video' %}
+      <video autoplay muted playsinline class="media-item" src="{{ media.item.video_file.url }}" data-duration="{{ media.item.duration }}"></video>
+    {% elif media.type == 'pdf' %}
+    <iframe src="{{ media.item.pdf_file.url }}#toolbar=0&navpanes=0" class="media-item" data-duration="{{ media.item.pdf_duration }}"></iframe>
+    {% endif %}
+  {% endfor %}
+</div>
+
+<style>
+    .fullscreen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        overflow: hidden;
+        aspect-ratio: 16 / 9; /* Adjust as needed */
+        {% comment %} transform: rotate(270deg); /* Rotate the content by 270 degrees */ {% endcomment %}
+      }
+    .media-item {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: scale-down;
+    display: none;
+  }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const mediaItems = document.querySelectorAll('.media-item');
+  let currentIndex = 0;
+
+  function showNextItem() {
+    mediaItems[currentIndex].style.display = 'none';
+    currentIndex = (currentIndex + 1) % mediaItems.length;
+    mediaItems[currentIndex].style.display = 'block';
+
+    const duration = parseInt(mediaItems[currentIndex].dataset.duration) * 1000;
+
+    if (mediaItems[currentIndex].tagName === 'VIDEO') {
+      mediaItems[currentIndex].play(); // Autoplay with muted and playsinline
+      mediaItems[currentIndex].onended = showNextItem;
+    } else {
+      setTimeout(showNextItem, duration);
+    }
+  }
+
+  // Show the first item initially
+  if (mediaItems.length > 0) {
+    mediaItems[0].style.display = 'block';
+    if (mediaItems[0].tagName === 'VIDEO') {
+      mediaItems[0].play(); // Autoplay with muted and playsinline
+      mediaItems[0].onended = showNextItem;
+    } else {
+      setTimeout(showNextItem, parseInt(mediaItems[0].dataset.duration) * 1000);
+    }
+  }
+});
+</script>
+{% endblock %}

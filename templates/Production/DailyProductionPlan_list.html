@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Production Plan Vs Actual LineWise</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+
+</head>
+<body class="p-4">
+    <div class="text-center mb-4">
+        <img
+            src="/static/image.png"
+            alt="Trans ACNR Logo"
+            class="mx-auto"
+            width="200"
+            height="50"
+            style="aspect-ratio: 200 / 50; object-fit: cover;"
+        />
+        <h1 class="text-xl font-bold">Daily Production Plan Vs Actual LineWise </h1>
+    </div>
+    <div class="bg-yellow-300 text-center font-bold py-2">Assembly Line - 1</div>
+    <table class="w-full border-collapse border border-gray-400 mt-2">
+        <thead>
+            <tr class="bg-gray-200">
+                <th class="border border-gray-400 p-2">S. No.</th>
+                <th class="border border-gray-400 p-2">Unit Code</th>
+                <th class="border border-gray-400 p-2">Unit Model</th>
+                <th colspan="2" class="border border-gray-400 p-2 bg-yellow-300">25-Aug-24</th>
+                <th class="border border-gray-400 p-2">Remarks</th>
+            </tr>
+            <tr class="bg-gray-200">
+                <th class="border border-gray-400 p-2"></th>
+                <th class="border border-gray-400 p-2"></th>
+                <th class="border border-gray-400 p-2"></th>
+                <th class="border border-gray-400 p-2 bg-red-200">Qty. Planned</th>
+                <th class="border border-gray-400 p-2 bg-red-200">Qty. Actual</th>
+                <th class="border border-gray-400 p-2"></th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for plan in plans %}
+            <tr>
+                <td class="border border-gray-400 p-2 text-center">{{ forloop.counter }}</td>
+                <td class="border border-gray-400 p-2 text-center">{{ plan.unit.code }}</td>
+                <td class="border border-gray-400 p-2">{{ plan.unit.model }}</td>
+                <td class="border border-gray-400 p-2 bg-red-200 text-center">{{ plan.qty_planned }}</td>
+                <td class="border border-gray-400 p-2 bg-red-200 text-center">{{ plan.qty_actual }}</td>
+                <td class="border border-gray-400 p-2">{{ plan.remarks }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    {% comment %} <div class="text-center mt-4 text-gray-400 text-6xl">Page 1</div> {% endcomment %}
+</body>
+</html>

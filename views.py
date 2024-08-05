@@ -1,19 +1,9 @@
-from django.shortcuts import render, redirect, get_object_or_404
-from django.http import JsonResponse, HttpResponse
-from .models import Screen, Product, TodayChecklist, RejectionList, PDFFile,MediaFile
-
-from .forms import TodayChecklistForm ,RejectionListForm,PDFFileForm,MediaFileForm,MediaFileUploadForm
-
-
+from django.shortcuts import render, redirect
+from django.http import JsonResponse
+from .models import Screen, Product
 from django.contrib.auth.decorators import login_required
 from django.contrib.admin.views.decorators import staff_member_required
 from django.templatetags.static import static  # Import the static function
-import xlsxwriter
-from django.utils import timezone
-import json 
-import os
-
-
 
 @login_required
 def display_screen_content(request):
@@ -99,377 +89,248 @@ def fetch_updated_data(request):
     return JsonResponse(updated_data, safe=False)
 
 
-#  ----------------------------------------------------------------
-# Today CheckList views
 
-# View for displaying today's checklist items and handling form submissions
-def today_checklist(request):
+
+
+# ---------------------------------------------------------------
+
+from django.shortcuts import render, redirect
+from django.http import HttpResponseRedirect
+from .models import Videos ,Pdf,Slider
+from .forms import VideoForm , PdfForm,SliderForm
+from django.forms import modelformset_factory
+
+
+
+#  for videos 
+# ---------------------------------------------------------------
+def videos_list(request):
+    videos = Videos.objects.all()
+    context = {'videos': videos}
+    return render(request, 'video/videos_list.html', context)
+
+def video_detail(request, video_id):
+    video = Videos.objects.get(id=video_id)
+    context = {'video': video}
+    return render(request, 'video/video_detail.html', context)
+
+def create_video(request):
     if request.method == 'POST':
-        form = TodayChecklistForm(request.POST)
+        form = VideoForm(request.POST, request.FILES)
         if form.is_valid():
             form.save()
-            return redirect('today_checklist')
+            return redirect('videos_list')
     else:
-        form = TodayChecklistForm(initial={'date': timezone.now().date(), 'shift': get_default_shift()})
-    today_checklist_items = TodayChecklist.objects.filter(date=timezone.now().date())
-    context = {
-        'form': form,
-        'today_checklist_items': today_checklist_items,
-    }
-    return render(request, 'today_checklist/today_checklist.html', context)
+        form = VideoForm()
+    return render(request, 'video/create_video.html', {'form': form})
 
-# View for exporting today's checklist items to Excel
-def export_to_excel(request):
-    today_checklist_items = TodayChecklist.objects.filter(date=timezone.now().date())
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=checklist.xlsx'
-    workbook = xlsxwriter.Workbook(response)
-    worksheet = workbook.add_worksheet('Today Checklist')
-    headers = ['Date', 'Shift', 'Checklist Item']
-    for col, header in enumerate(headers):
-        worksheet.write(0, col, header)
-    for row, item in enumerate(today_checklist_items, start=1):
-        worksheet.write(row, 0, item.date.strftime('%Y-%m-%d'))
-        worksheet.write(row, 1, item.get_shift_display())
-        worksheet.write(row, 2, item.checklist_item)
-    workbook.close()
-    return response
-
-
-
-# Helper function to determine the default shift based on current time
-def get_default_shift():
-    now = timezone.now()
-    if now.hour >= 7 and now.hour < 19:
-        return 'A'  # Morning shift if it's between 7 AM and 7 PM
-    elif now.hour >= 19 or now.hour < 7:
-        return 'C'  # Night shift if it's between 7 PM and 7 AM
-    else:
-        return 'B'  # Evening shift for any other times
-
-
-
-
-
-
-
-#  ----------------------------------------------------------------
-# Rejections list 
-
-# View for displaying rejection list items and handling form submissions
-def rejection_list(request):
+def edit_video(request, video_id):
+    video = Videos.objects.get(id=video_id)
     if request.method == 'POST':
-        form = RejectionListForm(request.POST)
+        form = VideoForm(request.POST, request.FILES, instance=video)
         if form.is_valid():
             form.save()
-            return redirect('rejection_list')
+            return redirect('videos_list')
     else:
-        form = RejectionListForm()
-    rejection_list_items = RejectionList.objects.all()
-    context = {
-        'form': form,
-        'rejection_list_items': rejection_list_items
-    }
-    return render(request, 'rejectionList/rejection_list.html', context)
+        form = VideoForm(instance=video)
+    return render(request, 'video/edit_video.html', {'form': form})
 
-    
-    
-# View for exporting rejection list items to Excel
-def export_rejection_list(request):
-    rejection_list_items = RejectionList.objects.all()
-    response = HttpResponse(content_type='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet')
-    response['Content-Disposition'] = 'attachment; filename=rejection_list.xlsx'
-    workbook = xlsxwriter.Workbook(response)
-    worksheet = workbook.add_worksheet('Rejection List')
-    headers = [
-        'Date', 'Opening Balance', 'Receive from Rework', 'Total Pass Qty', 'Closing Balance',
-        'Total Rejection Qty', 'Defects', 'Operator Signature', 'Verified By', 'Month', 'Stage',
-        'Part Description'
-    ]
-    for col, header in enumerate(headers):
-        worksheet.write(0, col, header)
-    for row, item in enumerate(rejection_list_items, start=1):
-        worksheet.write(row, 0, item.date.strftime('%Y-%m-%d'))
-        worksheet.write(row, 1, item.opening_balance)
-        worksheet.write(row, 2, item.receive_from_rework)
-        worksheet.write(row, 3, item.total_pass_qty)
-        worksheet.write(row, 4, item.closing_balance)
-        worksheet.write(row, 5, item.total_rejection_qty)
-        worksheet.write(row, 6, item.defects)
-        worksheet.write(row, 7, item.operator_signature)
-        worksheet.write(row, 8, item.verified_by)
-        worksheet.write(row, 9, item.month)
-        worksheet.write(row, 10, item.stage)
-        worksheet.write(row, 11, item.part_description)
-    workbook.close()
-    return response
+def delete_video(request, video_id):
+    video = Videos.objects.get(id=video_id)
+    video.delete()
+    return HttpResponseRedirect('/videos/')
+
+
+#  for Pdfs 
+# ----------------------------------------------------------------
+def pdfs_list(request):
+    pdfs = Pdf.objects.all()
+    context = {'pdfs': pdfs}
+    return render(request, 'pdf/pdfs_list.html', context)
+
+def pdf_detail(request, pdf_id):
+    pdf = Pdf.objects.get(id=pdf_id)
+    context = {'pdf': pdf}
+    return render(request, 'pdf/pdf_detail.html', context)
+
+def create_pdf(request):
+    if request.method == 'POST':
+        form = PdfForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('pdfs_list')
+    else:
+        form = PdfForm()
+    return render(request, 'pdf/create_pdf.html', {'form': form})
+
+def edit_pdf(request, pdf_id):
+    pdf = Pdf.objects.get(id=pdf_id)
+    if request.method == 'POST':
+        form = PdfForm(request.POST, request.FILES, instance=pdf)
+        if form.is_valid():
+            form.save()
+            return redirect('pdfs_list')
+    else:
+        form = PdfForm(instance=pdf)
+    return render(request, 'pdf/edit_pdf.html', {'form': form})
+
+def delete_pdf(request, pdf_id):
+    pdf = Pdf.objects.get(id=pdf_id)
+    pdf.delete()
+    return HttpResponseRedirect('/pdfs/')
 
 
 
 
 # ----------------------------------------------------------------
-#  scrren changes 
-
-# View for listing all screens
-def screen_list(request):
-    screens = Screen.objects.all()
-    return render(request, 'screen_list.html', {'screens': screens})
-
-# View for displaying details of a specific screen
-def screen_detail(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    return render(request, 'screen_detail.html', {'screen': screen})
+#  for screen Sliders
 
 
-# View for uploading PDF files associated with a screen
-def upload_pdf(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    if request.method == 'POST':
-        form = PDFFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            pdf_file = form.save(commit=False)
-            pdf_file.screen = screen
-            if screen.pdf_files.count() < 10:
-                pdf_file.save()
-                return redirect('view_pdf', screen_id=screen.screen_id)
-            else:
-                return HttpResponse("You can only upload a maximum of 10 PDF files per screen.")
-    else:
-        form = PDFFileForm()
-    return render(request, 'upload_pdf.html', {'form': form, 'screen': screen})
+# from django.shortcuts import render, redirect, get_object_or_404
+# from django.forms import modelformset_factory, CheckboxInput
+# from .models import Slider, Pdf, Videos
+# from .forms import SliderForm
+
+# def slider_list(request):
+#     sliders = Slider.objects.all()
+#     for slider in sliders:
+#         print(f"Slider Screen: {slider.screen}, Name: {slider.name}")
+#     return render(request, 'screen/slider_list.html', {'sliders': sliders})
 
 
-# View for displaying PDF files associated with a screen
-def view_pdf(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    pdf_files = screen.pdf_files.all()
-    return render(request, 'view_pdf.html', {'screen': screen, 'pdf_files': pdf_files})
+# def create_slider(request):
+#     PdfFormSet = modelformset_factory(Pdf, fields=('id',), widgets={'id': CheckboxInput()})
+#     VideoFormSet = modelformset_factory(Videos, fields=('id',), widgets={'id': CheckboxInput()})
+
+#     if request.method == 'POST':
+#         slider_form = SliderForm(request.POST)
+#         pdf_formset = PdfFormSet(request.POST, queryset=Pdf.objects.all())
+#         video_formset = VideoFormSet(request.POST, queryset=Videos.objects.all())
+
+#         if all(form.is_valid() for form in [slider_form, pdf_formset, video_formset]):
+#             slider = slider_form.save()
+#             for formset, field in [(pdf_formset, 'upload_pdf'), (video_formset, 'upload_video')]:
+#                 for form in formset.cleaned_data:
+#                     if form.get('id'):
+#                         getattr(slider, field).add(form['id'])
+#             return redirect('slider_list')
+#     else:
+#         slider_form = SliderForm()
+#         pdf_formset = PdfFormSet(queryset=Pdf.objects.none())
+#         video_formset = VideoFormSet(queryset=Videos.objects.none())
+
+#     context = {
+#         'slider_form': slider_form,
+#         'pdf_formset': pdf_formset,
+#         'video_formset': video_formset
+#     }
+#     return render(request, 'screen/create_slider.html', context)
+
+# def edit_slider(request, screen):
+#     slider = get_object_or_404(Slider, screen=screen)
+#     PdfFormSet = modelformset_factory(Pdf, fields=('id',), can_delete=True, widgets={'id': CheckboxInput()})
+#     VideoFormSet = modelformset_factory(Videos, fields=('id',), can_delete=True, widgets={'id': CheckboxInput()})
+
+#     if request.method == 'POST':
+#         slider_form = SliderForm(request.POST, instance=slider)
+#         pdf_formset = PdfFormSet(request.POST, queryset=slider.upload_pdf.all(), prefix='pdfs')
+#         video_formset = VideoFormSet(request.POST, queryset=slider.upload_video.all(), prefix='videos')
+
+#         if all(form.is_valid() for form in [slider_form, pdf_formset, video_formset]):
+#             slider = slider_form.save()
+#             for formset, field in [(pdf_formset, 'upload_pdf'), (video_formset, 'upload_video')]:
+#                 for form in formset.cleaned_data:
+#                     if form.get('id'):
+#                         getattr(slider, field).add(form['id'])
+#                     elif form.get('DELETE'):
+#                         getattr(slider, field).remove(form['id'])
+#             return redirect('slider_list')
+#     else:
+#         slider_form = SliderForm(instance=slider)
+#         pdf_formset = PdfFormSet(queryset=slider.upload_pdf.all(), prefix='pdfs')
+#         video_formset = VideoFormSet(queryset=slider.upload_video.all(), prefix='videos')
+
+#     context = {
+#         'slider_form': slider_form,
+#         'pdf_formset': pdf_formset,
+#         'video_formset': video_formset,
+#         'slider': slider
+#     }
+#     return render(request, 'screen/edit_slider.html', context)
+
+# def delete_slider(request, screen):
+#     slider = get_object_or_404(Slider, screen=screen)
+#     slider.delete()
+#     return redirect('slider_list')
 
 
-# View for the main navigation hub
-def navigation_hub(request):
-    return render(request, 'index.html')
+from django.views.generic import ListView, DetailView, CreateView, UpdateView, DeleteView
+from django.urls import reverse_lazy
+from .models import Slider
+from .forms import SliderForm
 
-# View for listing screens with PDF files
-def screen_list_pdf(request):
-    screens = Screen.objects.all()
-    return render(request, 'screen_pdf_list.html', {'screens': screens})
+class SliderListView(ListView):
+    model = Slider
+    template_name = 'screen/slider_list.html'
+    context_object_name = 'sliders'
 
+class SliderDetailView(DetailView):
+    model = Slider
+    template_name = 'screen/slider_detail.html'
+    context_object_name = 'slider'
 
-# View for displaying a media slider with videos and PDFs from all screens
-def media_slider(request):
-    screens = Screen.objects.all()
-    video_paths = []
-    pdf_paths = []
-    for screen in screens:
-        if screen.video_path:
-            video_paths.extend(screen.video_path.split(','))
-        if screen.pdf_path:
-            pdf_paths.extend(screen.pdf_path.split(','))
-    return render(request, 'media_slider.html', {
-        'video_paths': video_paths,
-        'pdf_paths': pdf_paths,
-    })
+class SliderCreateView(CreateView):
+    model = Slider
+    form_class = SliderForm
+    template_name = 'screen/slider_form.html'
+    success_url = reverse_lazy('slider_list')
 
+class SliderUpdateView(UpdateView):
+    model = Slider
+    form_class = SliderForm
+    template_name = 'screen/slider_form.html'
+    success_url = reverse_lazy('slider_list')
 
-
-# ----------------------------------------------------------------
-
-
-def upload_Media(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    if request.method == 'POST':
-        form = MediaFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            media_file = form.save(commit=False)
-            media_file.screen = screen
-            if screen.media_files.count() < 10:
-                media_file.save()
-                return redirect('view_media', screen_id=screen.screen_id)
-            else:
-                return HttpResponse("You can only upload a maximum of 10 Media files per screen.")
-    else:
-        form = MediaFileForm()
-    return render(request, 'upload_Media.html', {'form': form, 'screen': screen})
-
-
-
-# View for displaying PDF files associated with a screen
-def view_media(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    media_files = screen.media_files.all()
-    return render(request, 'view_media.html', {'screen': screen, 'media_files': media_files})
-
-
-
-
-
-
-from .models import UploadFile
-from .forms import UploadFileForm
-from screen_app.models import Screen
-
-def upload_file(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    if request.method == 'POST':
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            upload_file = form.save(commit=False)
-            upload_file.screen = screen
-            upload_file.save()
-            return redirect('view_uploaded_files', screen_id=screen_id)
-    else:
-        form = UploadFileForm()
-    return render(request, 'upload_media/upload_file.html', {'form': form, 'screen': screen})
-
-def view_uploaded_files(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    uploaded_files = screen.upload_files.all()
-    return render(request, 'upload_media/view_uploaded_files.html', {'screen': screen, 'uploaded_files': uploaded_files})
-
-
-
-
-def screen_videos_slider(request):
-    screens = Screen.objects.all()  # Query to retrieve all screens (adjust as per your model)
-    return render(request, 'screen_videos_slider.html', {'screens': screens})
-
-
-
-
-
-# ----------------------------------------------------------------
-
-# def per_screen_slider(request,screen_id):
-#     screen = get_object_or_404(Screen, screen_id=screen_id)
-#     media_files=UploadFile.objects.all();
-#     video_paths=[]
-#     pdf_paths=[]
-#     for media_file in media_files:
-#         if media_file.video_file:
-#             video_paths.extend(media_file.video_file.split(','))
-#         if media_file.pdf_file:
-#             pdf_paths.extend(media_file.pdf_file.split(','))
-#             return render(request, 'per_screen_slider.html', {
-#         'video_paths': video_paths,
-#         'pdf_paths': pdf_paths,
-#         'screens':screen,
-#     })
-
-#  for video 
-
-def per_screen_slider(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    media_files = UploadFile.objects.filter(screen=screen)
+class SliderDeleteView(DeleteView):
+    model = Slider
+    template_name = 'screen/slider_confirm_delete.html'
+    success_url = reverse_lazy('slider_list')
     
-    video_paths = [media_file.video_file.url for media_file in media_files if media_file.video_file]
-    video_durations = [media_file.video_duration for media_file in media_files if media_file.video_file]
-
-    # Ensure video_paths and video_durations are of equal length
-    assert len(video_paths) == len(video_durations), "Video paths and durations must match"
-
-    # Create a list of dictionaries, each containing a video's path and duration
-    video_items = [{'path': path, 'duration': duration} for path, duration in zip(video_paths, video_durations)]
     
-    return render(request, 'per_screen_slider/video_slider.html', {
-        'screen': screen,
-        'video_items': video_items,
-    })
-
-
-
-def per_screen_slider2(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    media_files = UploadFile.objects.filter(screen=screen)
-
-    video_paths = [media_file.video_file.url for media_file in media_files if media_file.video_file]
-    pdf_paths = [media_file.pdf_file.url for media_file in media_files if media_file.pdf_file]
-
-    # Set custom interval time (in milliseconds)
-    mytime = 6000  # Example: 10 seconds
-
-    return render(request, 'per_screen_slider/pdf_slider.html', {
-        'screen': screen,
-        'video_paths': video_paths,
-        'pdf_paths': pdf_paths,
-        'mytime': mytime,
-    })
-
-
-
-
-
-
-
-# ------------------------------------------------------------------------------------------------
-
-from .models import addMultipleFiles, Screen
-from .forms import addMultipleFilesForm
-
-def add_multiple_files(request):
-    if request.method == 'POST':
-        form = addMultipleFilesForm(request.POST)
-        if form.is_valid():
-            form.save()
-            return redirect('add_multiple_files_list')  # Update this to the appropriate view name
-    else:
-        form = addMultipleFilesForm()
-    return render(request, 'addmultiplefiles_form.html', {'form': form})
-
-
-
-def add_multiple_files_detail(request, screen_id):
-    # Fetch the addMultipleFiles instance with the given pk (primary key)
-    files_instance = get_object_or_404(addMultipleFiles, screen_id=screen_id)
     
-    # Assuming you want to include related PDF files as well
-    pdf_files = files_instance.upload_pdf.all()  # Accessing related PDF files
+from django.shortcuts import render, get_object_or_404
+from .models import Slider
+
+def display_slider(request, screen):
+    slider = get_object_or_404(Slider, screen=screen)
+    videos = slider.upload_video.all()
+    pdfs = slider.upload_pdf.all()
     
-    # Render the detail template with the instance and related PDF files
-    return render(request, 'addmultiplefiles_detail.html', {'files_instance': files_instance, 'pdf_files': pdf_files})
-
-
-
-
-from .models import mediaFile2
-
-def slideshow_view(request, screen_id):
-    # Fetch the screen object based on screen_id
-    screen = get_object_or_404(addMultipleFiles, screen_id=screen_id)
+    media_items = []
+    for video in videos:
+        media_items.append({'type': 'video', 'item': video})
+    for pdf in pdfs:
+        media_items.append({'type': 'pdf', 'item': pdf})
     
-    # Assuming 'upload_video' is the ManyToManyField related name for videos in 'addMultipleFiles'
-    media_files = screen.upload_video.all()
-
+    media_items.sort(key=lambda x: x['item'].uploaded_at)
+    
     context = {
-        'media_files': media_files,
-        'screen_id': screen_id
+        'slider': slider,
+        'media_items': media_items,
     }
-    return render(request, 'slideshow/slider.html', context)
+    return render(request, 'screen/display_slider.html', context)
 
 
+# ----------------------------------------------------------------
+from .models import ProductionPlan,DailyProductionPlan
+
+def production_plan_list(request):
+    plans = ProductionPlan.objects.all()
+    return render(request, 'Production/production_plan_list.html', {'plans': plans})
 
 
+def production_plan_list2(request):
+    plans = DailyProductionPlan.objects.all()
+    return render(request, 'Production/DailyProductionPlan_list.html', {'plans': plans})
 
-def pdf_slideshow_view(request, screen_id):
-    screen = get_object_or_404(Screen, screen_id=screen_id)
-    screen_files = addMultipleFiles.objects.filter(screen=screen)
-    
-    pdf_files = []
-    for screen_file in screen_files:
-        pdf_files.extend(screen_file.upload_pdf.all())
-
-    return render(request, 'slideshow/pdf_slideshow.html', {
-        'pdf_files': pdf_files,
-            'screen_id': screen_id
-
-    })
-
-
-
-
-
-
-
-
-
-
+# ---------------------------------------------------------------

@@ -1,0 +1,25 @@
+{% extends 'base.html' %}
+
+{% block content %}
+  <h1>{{ slider.name|default:"Unnamed Slider" }}</h1>
+  <p>Screen: {{ slider.screen }}</p>
+  <h2>PDFs:</h2>
+  <ul>
+    {% for pdf in slider.upload_pdf.all %}
+      <li>{{ pdf.pdf_name }}</li>
+    {% empty %}
+      <li>No PDFs uploaded.</li>
+    {% endfor %}
+  </ul>
+  <h2>Videos:</h2>
+  <ul>
+    {% for video in slider.upload_video.all %}
+      <li>{{ video.video_name }}</li>
+    {% empty %}
+      <li>No videos uploaded.</li>
+    {% endfor %}
+  </ul>
+  <a href="{% url 'slider_update' slider.pk %}">Edit</a>
+  <a href="{% url 'slider_delete' slider.pk %}">Delete</a>
+  <a href="{% url 'slider_list' %}">Back to List</a>
+{% endblock %}
