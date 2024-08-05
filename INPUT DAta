@@ -1,0 +1,111 @@
+python manage.py shell
+
+
+from your_app_name.models import Unit
+
+units = [
+    {"code": "TA100-70020", "model": "A 325 ( SML/A/M)"},
+    {"code": "TA100-11050", "model": "A 438 Fuso"},
+    {"code": "TA100-11051", "model": "A 438 D"},
+    {"code": "TA100-11052", "model": "A 438"},
+    {"code": "TA100-11053", "model": "SL 438 C (6B/4F)"},
+    {"code": "TA100-11054", "model": "A 328"},
+    {"code": "TA100-11055", "model": "ASTRO-328 A/L Oyster"},
+    {"code": "TA100-11056", "model": "SL-250 A/L GAZL"},
+    {"code": "TA100-11057", "model": "SL 550 SS ( VB008783/Volvo) TA590-16780"},
+    {"code": "TA100-11058", "model": "SL 440 Cool (3512/Volvo)"},
+]
+
+for unit in units:
+    Unit.objects.create(**unit)
+
+
+
+from datetime import date
+from your_app_name.models import Unit, DailyProductionPlan
+
+units_data = [
+    {"code": "TA100-70020", "model": "A 325 ( SML/A/M)"},
+    {"code": "TA100-11050", "model": "A 438 Fuso"},
+    {"code": "TA100-11051", "model": "A 438 D"},
+    {"code": "TA100-11052", "model": "A 438"},
+    {"code": "TA100-11053", "model": "SL 438 C (6B/4F)"},
+    {"code": "TA100-11054", "model": "A 328"},
+    {"code": "TA100-11055", "model": "ASTRO-328 A/L Oyster"},
+    {"code": "TA100-11056", "model": "SL-250 A/L GAZL"},
+    {"code": "TA100-11057", "model": "SL 550 SS ( VB008783/Volvo) TA590-16780"},
+    {"code": "TA100-11058", "model": "SL 440 Cool (3512/Volvo)"},
+]
+
+for unit_data in units_data:
+    Unit.objects.get_or_create(code=unit_data['code'], defaults={'model': unit_data['model']})
+
+production_data = [
+    {"code": "TA100-70020", "qty_planned": 5, "qty_actual": 4},
+    {"code": "TA100-11050", "qty_planned": 5, "qty_actual": 5},
+    {"code": "TA100-11051", "qty_planned": 4, "qty_actual": 2},
+    {"code": "TA100-11052", "qty_planned": 7, "qty_actual": 4},
+    {"code": "TA100-11053", "qty_planned": 5, "qty_actual": 1},
+    {"code": "TA100-11054", "qty_planned": 2, "qty_actual": 1},
+    {"code": "TA100-11055", "qty_planned": 3, "qty_actual": 2},
+    {"code": "TA100-11056", "qty_planned": 1, "qty_actual": 1},
+    {"code": "TA100-11057", "qty_planned": 1, "qty_actual": 1},
+    {"code": "TA100-11058", "qty_planned": 1, "qty_actual": 1},
+]
+
+for data in production_data:
+    unit = Unit.objects.get(code=data['code'])
+    DailyProductionPlan.objects.create(
+        unit=unit,
+        qty_planned=data['qty_planned'],
+        qty_actual=data['qty_actual'],
+        date=date(2024, 7, 25)  # Use the date provided in the data
+    )
+
+
+
+
+
+
+from datetime import date
+from your_app_name.models import Unit, ProductionPlan
+
+units_data = [
+    {"code": "TA100-70020", "model": "A 325 ( SML/A/M)"},
+    {"code": "TA100-11050", "model": "A 438 Fuso"},
+    {"code": "TA100-11051", "model": "A 438 D"},
+    {"code": "TA100-11052", "model": "A 438"},
+    {"code": "TA100-11053", "model": "SL 438 C (6B/4F)"},
+    {"code": "TA100-11054", "model": "A 328"},
+    {"code": "TA100-11055", "model": "ASTRO-328 A/L Oyster"},
+    {"code": "TA100-11056", "model": "SL-250 A/L GAZL"},
+    {"code": "TA100-11057", "model": "SL 550 SS ( VB008783/Volvo) TA590-16780"},
+    {"code": "TA100-11058", "model": "SL 440 Cool (3512/Volvo)"},
+]
+
+for unit_data in units_data:
+    Unit.objects.get_or_create(code=unit_data['code'], defaults={'model': unit_data['model']})
+
+production_data = [
+    {"code": "TA100-70020", "qty_planned": 5, "qty_actual": 4},
+    {"code": "TA100-11050", "qty_planned": 5, "qty_actual": 5},
+    {"code": "TA100-11051", "qty_planned": 4, "qty_actual": 2},
+    {"code": "TA100-11052", "qty_planned": 7, "qty_actual": 4},
+    {"code": "TA100-11053", "qty_planned": 5, "qty_actual": 1},
+    {"code": "TA100-11054", "qty_planned": 2, "qty_actual": 1},
+    {"code": "TA100-11055", "qty_planned": 3, "qty_actual": 2},
+    {"code": "TA100-11056", "qty_planned": 1, "qty_actual": 1},
+    {"code": "TA100-11057", "qty_planned": 1, "qty_actual": 1},
+    {"code": "TA100-11058", "qty_planned": 1, "qty_actual": 1},
+]
+
+for data in production_data:
+    unit = Unit.objects.get(code=data['code'])
+    ProductionPlan.objects.create(
+        unit=unit,
+        qty_planned=data['qty_planned'],
+        qty_actual=data['qty_actual'],
+        date=date(2024, 7, 25)  # Use the date provided in the data
+    )
+
+
